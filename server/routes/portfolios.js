@@ -120,5 +120,39 @@ router.post('/:pid/withdraw', async (req, res) => {
     }
 });
 
+router.post('/transfer', async (req, res) => {
+    const { fromPid, toPid, amount } = req.body;
+
+    try {
+        // Start a transaction
+        await pool.query('BEGIN');
+
+        // Deduct funds from the source portfolio
+        const deductResult = await pool.query(
+            'UPDATE portfolios SET money = money - $1 WHERE pid = $2 AND money >= $1 RETURNING *',
+            [amount, fromPid]
+        );
+
+        if (deductResult.rows.length === 0) {
+            throw new Error('Insufficient funds in the source portfolio.');
+        }
+
+        // Add funds to the destination portfolio
+        await pool.query(
+            'UPDATE portfolios SET money = money + $1 WHERE pid = $2',
+            [amount, toPid]
+        );
+
+        // Commit the transaction
+        await pool.query('COMMIT');
+
+        res.json({ message: 'Transfer successful' });
+    } catch (err) {
+        // Rollback the transaction in case of an error
+        await pool.query('ROLLBACK');
+        console.error(err);
+        res.status(500).json({ error: err.message || 'Failed to transfer funds' });
+    }
+});
 
 module.exports = router;

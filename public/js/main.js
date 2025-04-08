@@ -41,6 +41,7 @@ async function login(loginEmail, password) {
     localStorage.setItem('token', data.token);
     alert("Logged in successfully!");
     loadPortfolios();
+    populateTransferDropdowns();
     showSection('portfolioSection');
   } else {
     alert(data.error || 'Login failed');
@@ -197,6 +198,56 @@ async function withdrawCash(pid, money) {
   });
   loadPortfolios();
 }
+
+// Populate the transfer dropdowns with portfolio options
+async function populateTransferDropdowns() {
+  const res = await apiFetch('/api/portfolios');
+  const portfolios = await res.json();
+
+  const fromSelect = document.getElementById('fromPortfolio');
+  const toSelect = document.getElementById('toPortfolio');
+
+  fromSelect.innerHTML = ''; // Clear existing options
+  toSelect.innerHTML = ''; // Clear existing options
+
+  for (const portfolio of portfolios) {
+    const option = document.createElement('option');
+    option.value = portfolio.pid;
+    option.textContent = portfolio.name;
+
+    fromSelect.appendChild(option);
+    toSelect.appendChild(option.cloneNode(true)); // Clone the option for the "to" dropdown
+  }
+}
+
+// Handle transfer form submission
+document.getElementById('transferFundsForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const fromPid = document.getElementById('fromPortfolio').value;
+  const toPid = document.getElementById('toPortfolio').value;
+  const amount = parseFloat(document.getElementById('transferAmount').value);
+
+  if (fromPid === toPid) {
+    alert('Cannot transfer funds to the same portfolio.');
+    return;
+  }
+
+  try {
+    // Send a request to transfer funds
+    await apiFetch('/api/portfolios/transfer', {
+      method: 'POST',
+      body: JSON.stringify({ fromPid, toPid, amount }),
+    });
+
+    loadPortfolios(); // Reload portfolios to reflect changes
+  } catch (err) {
+    alert('Failed to transfer funds: ' + err.message);
+  }
+});
+
+// Call `populateTransferDropdowns` when the portfolio section is shown
+document.querySelector('a[onclick="showSection(\'portfolioSection\')"]').addEventListener('click', populateTransferDropdowns);
 
 // Call `loadPortfolios` when the portfolio section is shown
 document.querySelector('a[onclick="showSection(\'portfolioSection\')"]').addEventListener('click', loadPortfolios);
