@@ -134,15 +134,6 @@ document.getElementById('createPortfolioForm').addEventListener('submit', async 
   }
 });
 
-// async function loadPortfolio() {
-//   // fetch user's portfolios
-//   const res = await apiFetch('/api/portfolios');
-//   const portfolios = await res.json();
-//   if (portfolios.length === 0) return;
-//   currentPortfolioId = portfolios[0].pid;
-//   renderPortfolio(currentPortfolioId);
-// }
-
 async function loadHoldings(pid) {
   const res = await apiFetch(`/api/portfolios/${pid}`);
   const { holdings } = await res.json();
@@ -209,11 +200,6 @@ async function withdrawCash(pid, money) {
 
 // Call `loadPortfolios` when the portfolio section is shown
 document.querySelector('a[onclick="showSection(\'portfolioSection\')"]').addEventListener('click', loadPortfolios);
-// TODO: test if we need this
-// document.querySelector('button[onclick="depositCash()"]')
-//   .addEventListener('click', depositCash);
-// document.querySelector('button[onclick="withdrawCash()"]')
-//   .addEventListener('click', withdrawCash);
 
 // --- Predictions ---
 async function predictStock(stock, interval) {
