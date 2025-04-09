@@ -41,7 +41,6 @@ async function login(loginEmail, password) {
     localStorage.setItem('token', data.token);
     alert("Logged in successfully!");
     loadPortfolios();
-    populateTransferDropdowns();
     showSection('portfolioSection');
   } else {
     alert(data.error || 'Login failed');
@@ -73,7 +72,6 @@ document.getElementById('loginForm').addEventListener('submit', async e => {
 let currentPortfolioId;
 
 async function loadPortfolios() {
-  // Fetch all portfolios for the logged-in user
   const res = await apiFetch('/api/portfolios');
   const portfolios = await res.json();
 
@@ -83,34 +81,39 @@ async function loadPortfolios() {
   for (const portfolio of portfolios) {
     const portfolioDiv = document.createElement('div');
     portfolioDiv.className = 'portfolio';
-    const money = portfolio.money ? parseFloat(portfolio.money) : 0;
+    portfolioDiv.setAttribute('data-pid', portfolio.pid); // Add a data attribute for easy selection
 
     // Portfolio header
     portfolioDiv.innerHTML = `
-        <h3>Portfolio: ${portfolio.name}</h3>
-        <p>Cash: $${money.toFixed(2)}</p>
-        <button onclick="depositCash(${portfolio.pid})">Deposit Cash</button>
-        <button onclick="withdrawCash(${portfolio.pid}, ${money})">Withdraw Cash</button>
-        <h4>Owned Stocks</h4>
-        <table>
-          <thead>
-            <tr>
-              <th>Stock Symbol</th>
-              <th>Shares</th>
-              <th>Last Close Price</th>
-              <th>Market Value</th>
-            </tr>
-          </thead>
-          <tbody id="holdings-${portfolio.pid}">
-            <!-- Stock holdings will be dynamically populated -->
-          </tbody>
-        </table>
-      `;
+      <h3>Portfolio: ${portfolio.name}</h3>
+      <p class="cash-value">Cash: $0.00</p> <!-- Placeholder for cash -->
+      <p class="stock-value">Total Stock Value: $0.00</p> <!-- Placeholder for total stock value -->
+      <button onclick="depositCash(${portfolio.pid})">Deposit Cash</button>
+      <button onclick="withdrawCash(${portfolio.pid}, 0)">Withdraw Cash</button>
+      <button onclick="buyStock(${portfolio.pid})">Buy Stocks</button>
+      <button onclick="sellStock(${portfolio.pid})">Sell Stocks</button>
+      <button onclick="deletePortfolio(${portfolio.pid})" style="color: red;">Delete Portfolio</button>
+      <h4>Owned Stocks</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Stock Symbol</th>
+            <th>Shares</th>
+            <th>Last Close Price</th>
+            <th>Market Value</th>
+          </tr>
+        </thead>
+        <tbody id="holdings-${portfolio.pid}">
+          <!-- Stock holdings will be dynamically populated -->
+        </tbody>
+      </table>
+    `;
 
     container.appendChild(portfolioDiv);
 
     // Load holdings for this portfolio
     loadHoldings(portfolio.pid);
+    populateTransferDropdowns();
   }
 }
 
@@ -135,21 +138,51 @@ document.getElementById('createPortfolioForm').addEventListener('submit', async 
   }
 });
 
+async function deletePortfolio(pid) {
+  if (!confirm('Are you sure you want to delete this portfolio? This action cannot be undone.')) {
+    return;
+  }
+
+  try {
+    const res = await apiFetch(`/api/portfolios/${pid}`, {
+      method: 'DELETE',
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to delete portfolio');
+    }
+
+    alert('Portfolio deleted successfully! Your cash has been withdrawn to your bank account');
+    loadPortfolios(); // Reload portfolios to reflect changes
+  } catch (err) {
+    alert('Failed to delete portfolio: ' + err.message);
+  }
+}
+
 async function loadHoldings(pid) {
   const res = await apiFetch(`/api/portfolios/${pid}`);
-  const { holdings } = await res.json();
+  const { holdings, money, totalStockValue } = await res.json();
 
+  // Update the cash value
+  const portfolioDiv = document.querySelector(`.portfolio[data-pid="${pid}"]`);
+  if (portfolioDiv) {
+    portfolioDiv.querySelector('.cash-value').textContent = `Cash: $${money.toFixed(2)}`;
+    portfolioDiv.querySelector('.stock-value').textContent = `Total Stock Value: $${totalStockValue.toFixed(2)}`;
+  }
+
+  // Populate the holdings table
   const tbody = document.getElementById(`holdings-${pid}`);
   tbody.innerHTML = ''; // Clear existing rows
 
   for (const holding of holdings) {
     const row = document.createElement('tr');
     row.innerHTML = `
-        <td>${holding.stock}</td>
-        <td>${holding.shares}</td>
-        <td>$${holding.close.toFixed(2)}</td>
-        <td>$${(holding.shares * holding.close).toFixed(2)}</td>
-      `;
+      <td><a href="#" onclick="showStockHistory('${holding.stock}')">${holding.stock}</a></td>
+      <td>${holding.shares}</td>
+      <td>$${holding.close.toFixed(2)}</td>
+      <td>$${(holding.shares * holding.close).toFixed(2)}</td>
+    `;
     tbody.appendChild(row);
   }
 }
@@ -246,11 +279,155 @@ document.getElementById('transferFundsForm').addEventListener('submit', async (e
   }
 });
 
-// Call `populateTransferDropdowns` when the portfolio section is shown
-document.querySelector('a[onclick="showSection(\'portfolioSection\')"]').addEventListener('click', populateTransferDropdowns);
-
 // Call `loadPortfolios` when the portfolio section is shown
 document.querySelector('a[onclick="showSection(\'portfolioSection\')"]').addEventListener('click', loadPortfolios);
+
+async function buyStock(pid) {
+  const stock = prompt('Enter the stock symbol to buy:');
+  const shares = parseInt(prompt('Enter the number of shares to buy:'), 10);
+
+  if (!stock || isNaN(shares) || shares <= 0) {
+    alert('Invalid input');
+    return;
+  }
+
+  try {
+    const res = await apiFetch(`/api/portfolios/${pid}/buy`, {
+      method: 'POST',
+      body: JSON.stringify({ stock, shares }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to buy stock');
+    }
+
+    alert('Stock purchased successfully!');
+    loadPortfolios(); // Reload portfolios to reflect changes
+  } catch (err) {
+    alert('Failed to buy stock: ' + err.message);
+  }
+}
+
+async function sellStock(pid) {
+  const stock = prompt('Enter the stock symbol to sell:');
+  const shares = parseInt(prompt('Enter the number of shares to sell:'), 10);
+
+  if (!stock || isNaN(shares) || shares <= 0) {
+    alert('Invalid input');
+    return;
+  }
+
+  try {
+    const res = await apiFetch(`/api/portfolios/${pid}/sell`, {
+      method: 'POST',
+      body: JSON.stringify({ stock, shares }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to sell stock');
+    }
+
+    const data = await res.json();
+    alert(`Stock sold successfully! Cash added: $${data.cashAdded.toFixed(2)}`);
+    loadPortfolios(); // Reload portfolios to reflect changes
+  } catch (err) {
+    alert('Failed to sell stock: ' + err.message);
+  }
+}
+
+// Function to fetch and display the stock's historical performance
+async function showStockHistory(stock, range = 'all') {
+  try {
+    currentStock = stock; // Store the current stock symbol
+    const res = await apiFetch(`/api/stocks/${stock}/history`);
+    const history = await res.json();
+
+    // Determine the latest date from the history data
+    const latestDate = new Date(Math.max(...history.map(entry => new Date(entry.date))));
+
+    console.log('Latest Date:', latestDate);
+
+    // Filter the data based on the selected range
+    let filteredHistory = history;
+
+    if (range === 'year') {
+      filteredHistory = history.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate >= new Date(latestDate.getFullYear() - 1, latestDate.getMonth(), latestDate.getDate());
+      });
+    } else if (range === 'month') {
+      filteredHistory = history.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate >= new Date(latestDate.getFullYear(), latestDate.getMonth() - 1, latestDate.getDate());
+      });
+    } else if (range === 'week') {
+      filteredHistory = history.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate >= new Date(latestDate.getFullYear(), latestDate.getMonth(), latestDate.getDate() - 7);
+      });
+    }
+
+    // Extract and format data for the graph
+    const labels = filteredHistory.map(entry => new Date(entry.date).toLocaleDateString()); // Format dates
+    const prices = filteredHistory.map(entry => entry.close);
+
+    // Render the graph
+    renderStockGraph(stock, labels, prices);
+  } catch (err) {
+    alert('Failed to fetch stock history: ' + err.message);
+  }
+}
+
+async function updateStockHistory(range) {
+    if (currentStock) {
+        await showStockHistory(currentStock, range);
+    }
+}
+
+let currentChart = null; // Variable to store the current chart instance
+
+// Function to render the stock graph
+function renderStockGraph(stock, labels, prices) {
+    const dialog = document.getElementById('stockGraphDialog');
+    const canvas = document.getElementById('stockGraphCanvas');
+
+    // Destroy the existing chart if it exists
+    if (currentChart) {
+        currentChart.destroy();
+    }
+
+    // Create a new chart
+    currentChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: `Historical Performance of ${stock}`,
+                data: prices,
+                borderColor: 'blue',
+                fill: false,
+            }]
+        },
+        options: {
+            responsive: true, // Make the chart responsive
+            maintainAspectRatio: false, // Allow the chart to fill the container
+            scales: {
+                x: { title: { display: true, text: 'Date' } },
+                y: { title: { display: true, text: 'Price ($)' } }
+            },
+            plugins: {
+                legend: {
+                    position: 'top', // Adjust legend position
+                }
+            }
+        }
+    });
+
+    // Show the dialog
+    dialog.showModal();
+}
 
 // --- Predictions ---
 async function predictStock(stock, interval) {

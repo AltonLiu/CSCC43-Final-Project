@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>StockBook</title>
@@ -8,6 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
 
   <header>
@@ -97,7 +99,6 @@
         <button type="submit">Transfer</button>
       </form>
     </div>
-  </section>
 
   <!-- <section id="portfolioSection" class="hidden">
     <h2>Your Portfolio</h2>
@@ -186,7 +187,8 @@
       <h3>Incoming Friend Requests</h3>
       <ul id="incomingRequests">
         <!-- Example list item -->
-        <li>user1@example.com <button onclick="processRequest(this, 'accept')">Accept</button> <button onclick="processRequest(this, 'reject')">Reject</button></li>
+        <li>user1@example.com <button onclick="processRequest(this, 'accept')">Accept</button> <button
+            onclick="processRequest(this, 'reject')">Reject</button></li>
       </ul>
     </div>
     <div>
@@ -213,7 +215,8 @@
         </div>
         <div class="form-group">
           <label for="reviewText">Review:</label>
-          <textarea id="reviewText" rows="4" placeholder="Write your review here..." maxlength="4000" required></textarea>
+          <textarea id="reviewText" rows="4" placeholder="Write your review here..." maxlength="4000"
+            required></textarea>
         </div>
         <button type="submit">Submit Review</button>
       </form>
@@ -247,7 +250,20 @@
     </div>
   </section>
 
+  <dialog id="stockGraphDialog">
+    <h3>Stock Performance</h3>
+    <div>
+        <button onclick="updateStockHistory('all')">All Time</button>
+        <button onclick="updateStockHistory('year')">Last Year</button>
+        <button onclick="updateStockHistory('month')">Last Month</button>
+        <button onclick="updateStockHistory('week')">Last Week</button>
+    </div>
+    <canvas id="stockGraphCanvas"></canvas>
+    <button type="button" onclick="document.getElementById('stockGraphDialog').close()">Close</button>
+</dialog>
+
   <!-- <script src="js/script.js"></script> -->
   <script src="js/main.js"></script>
 </body>
+
 </html>

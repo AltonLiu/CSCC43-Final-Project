@@ -34,10 +34,10 @@ CREATE TABLE stockdata (
 
 -- Holdings
 CREATE TABLE holdings (
+  tid SERIAL PRIMARY KEY,
   pid INTEGER REFERENCES portfolios(pid) ON DELETE CASCADE,
   stock TEXT REFERENCES stocks(symbol) ON DELETE CASCADE,
-  shares INTEGER NOT NULL,
-  PRIMARY KEY(pid, stock)
+  shares INTEGER NOT NULL
 );
 
 -- Stock Lists

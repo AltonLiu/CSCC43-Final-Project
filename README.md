@@ -25,7 +25,7 @@ JWT_SECRET=your_jwt_secret
 Start server:
 npm start
 
-Access:
+Run application:
 navigate to http://localhost:3000
 
 Access tables:
