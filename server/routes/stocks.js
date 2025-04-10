@@ -27,4 +27,40 @@ router.get('/:symbol/history', async (req, res) => {
     }
 });
 
+router.post('/new', async (req, res) => {
+    const { symbol, date, open, close, high, low, volume } = req.body;
+  
+    try {
+      await pool.query('BEGIN');
+  
+      // Insert or update the stock in the "stock" table
+      await pool.query(
+        `INSERT INTO stock (symbol)
+         VALUES ($1)
+         ON CONFLICT (symbol) DO NOTHING`,
+        [symbol]
+      );
+  
+      // Insert the stock data into the "stockdata" table
+      await pool.query(
+        `INSERT INTO stockdata (stock, date, open, high, low, close, volume)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (stock, date) DO UPDATE
+         SET open = EXCLUDED.open,
+             high = EXCLUDED.high,
+             low = EXCLUDED.low,
+             close = EXCLUDED.close,
+             volume = EXCLUDED.volume`,
+        [symbol, date, open, high, low, close, volume]
+      );
+  
+      await pool.query('COMMIT');
+      res.status(201).json({ message: 'Stock data added successfully' });
+    } catch (err) {
+      await pool.query('ROLLBACK');
+      console.error(err);
+      res.status(500).json({ error: 'Failed to add stock data' });
+    }
+  });
+
 module.exports = router;

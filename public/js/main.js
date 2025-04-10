@@ -13,8 +13,11 @@ function showSection(sectionId) {
 
   // Show the specified section
   const targetSection = document.getElementById(sectionId);
+  console.log(`Showing section: ${targetSection}`); // Debugging line
   if (targetSection) {
+    console.log(`targetSection.classList: ${targetSection.classList}`); // Debugging line
     targetSection.classList.remove('hidden');
+    console.log(`targetSection.classList after: ${targetSection.classList}`); // Debugging line
   } else {
     console.error(`Section with ID "${sectionId}" not found.`);
   }
@@ -72,6 +75,7 @@ document.getElementById('loginForm').addEventListener('submit', async e => {
 let currentPortfolioId;
 
 async function loadPortfolios() {
+  console.log('Loading portfolios...');
   const res = await apiFetch('/api/portfolios');
   const portfolios = await res.json();
 
@@ -91,8 +95,8 @@ async function loadPortfolios() {
       <button onclick="withdrawCash(${portfolio.pid})">Withdraw Cash</button>
       <button onclick="buyStock(${portfolio.pid})">Buy Stocks</button>
       <button onclick="sellStock(${portfolio.pid})">Sell Stocks</button>
-      <button onclick="deletePortfolio(${portfolio.pid})" style="color: red;">Delete Portfolio</button>
       <button onclick="viewTransactions(${portfolio.pid})">Transactions</button>
+      <button onclick="deletePortfolio(${portfolio.pid})" style="color: red;">Delete Portfolio</button>
       <h4>Owned Stocks</h4>
       <table>
         <thead>
@@ -424,7 +428,7 @@ function renderStockGraph(stock, labels, prices) {
         },
         options: {
             responsive: true, // Make the chart responsive
-            maintainAspectRatio: false, // Allow the chart to fill the container
+            maintainAspectRatio: true, // Allow the chart to fill the container
             scales: {
                 x: { title: { display: true, text: 'Date' } },
                 y: { title: { display: true, text: 'Price ($)' } }
@@ -462,24 +466,38 @@ async function viewTransactions(pid) {
   transactionsDialog.showModal(); // Open the dialog
 }
 
-// --- Predictions ---
-async function predictStock(stock, interval) {
-  const res = await apiFetch(`/api/predictions?stock=${stock}&days=${interval}`);
-  return res.json();
-}
-
-document.getElementById('predictionForm').addEventListener('submit', async e => {
+document.getElementById('addStockForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const stock = document.getElementById('predictStock').value;
-  const days = parseInt(document.getElementById('predictInterval').value, 10);
-  const data = await predictStock(stock, days);
-  drawPredictionChart(data.labels, data.prices);
-});
 
-function drawPredictionChart(labels, data) {
-  const ctx = document.getElementById('predictionChart').getContext('2d');
-  new Chart(ctx, { type: 'line', data: { labels, datasets: [{ label: 'Predicted Price', data, borderColor: 'green', fill: false }] }, options: { responsive: true } });
-}
+  const inputSymbol = document.getElementById('inputSymbol').value;
+  const stockDate = document.getElementById('stockDate').value;
+  const stockOpen = parseFloat(document.getElementById('stockOpen').value);
+  const stockHigh = parseFloat(document.getElementById('stockHigh').value);
+  const stockLow = parseFloat(document.getElementById('stockLow').value);
+  const stockClose = parseFloat(document.getElementById('stockClose').value);
+  const stockVolume = parseInt(document.getElementById('stockVolume').value, 10);
+
+  try {
+    // Send the stock data to the backend
+    await apiFetch('/api/stocks/new', {
+      method: 'POST',
+      body: JSON.stringify({
+        symbol: inputSymbol,
+        date: stockDate,
+        open: stockOpen,
+        high: stockHigh,
+        low: stockLow,
+        close: stockClose,
+        volume: stockVolume,
+      }),
+    });
+
+    alert('Stock data added successfully!');
+    document.getElementById('addStockForm').reset(); // Clear the form
+  } catch (err) {
+    alert('Failed to add stock data: ' + err.message);
+  }
+});
 
 // --- Initialization ---
 window.onload = () => {
