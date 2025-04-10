@@ -81,18 +81,18 @@ async function loadPortfolios() {
   for (const portfolio of portfolios) {
     const portfolioDiv = document.createElement('div');
     portfolioDiv.className = 'portfolio';
-    portfolioDiv.setAttribute('data-pid', portfolio.pid); // Add a data attribute for easy selection
+    portfolioDiv.setAttribute('data-pid', portfolio.pid);
 
-    // Portfolio header
     portfolioDiv.innerHTML = `
       <h3>Portfolio: ${portfolio.name}</h3>
-      <p class="cash-value">Cash: $0.00</p> <!-- Placeholder for cash -->
-      <p class="stock-value">Total Stock Value: $0.00</p> <!-- Placeholder for total stock value -->
+      <p class="cash-value">Cash: $0.00</p>
+      <p class="stock-value">Total Stock Value: $0.00</p>
       <button onclick="depositCash(${portfolio.pid})">Deposit Cash</button>
-      <button onclick="withdrawCash(${portfolio.pid}, 0)">Withdraw Cash</button>
+      <button onclick="withdrawCash(${portfolio.pid})">Withdraw Cash</button>
       <button onclick="buyStock(${portfolio.pid})">Buy Stocks</button>
       <button onclick="sellStock(${portfolio.pid})">Sell Stocks</button>
       <button onclick="deletePortfolio(${portfolio.pid})" style="color: red;">Delete Portfolio</button>
+      <button onclick="viewTransactions(${portfolio.pid})">Transactions</button>
       <h4>Owned Stocks</h4>
       <table>
         <thead>
@@ -101,12 +101,17 @@ async function loadPortfolios() {
             <th>Shares</th>
             <th>Last Close Price</th>
             <th>Market Value</th>
+            <th>Coefficient of Variation</th>
+            <th>Beta</th>
           </tr>
         </thead>
         <tbody id="holdings-${portfolio.pid}">
           <!-- Stock holdings will be dynamically populated -->
         </tbody>
       </table>
+      <div id="correlation-${portfolio.pid}">
+        <!-- Correlation matrix will be dynamically populated -->
+      </div>
     `;
 
     container.appendChild(portfolioDiv);
@@ -162,9 +167,9 @@ async function deletePortfolio(pid) {
 
 async function loadHoldings(pid) {
   const res = await apiFetch(`/api/portfolios/${pid}`);
-  const { holdings, money, totalStockValue } = await res.json();
+  const { holdings, money, totalStockValue, correlationMatrix } = await res.json();
 
-  // Update the cash value
+  // Update the cash and total stock value
   const portfolioDiv = document.querySelector(`.portfolio[data-pid="${pid}"]`);
   if (portfolioDiv) {
     portfolioDiv.querySelector('.cash-value').textContent = `Cash: $${money.toFixed(2)}`;
@@ -182,9 +187,20 @@ async function loadHoldings(pid) {
       <td>${holding.shares}</td>
       <td>$${holding.close.toFixed(2)}</td>
       <td>$${(holding.shares * holding.close).toFixed(2)}</td>
+      <td>${holding.coefficient_of_variation ? holding.coefficient_of_variation.toFixed(4) : 'N/A'}</td>
+      <td>${holding.beta ? holding.beta.toFixed(4) : 'N/A'}</td>
     `;
     tbody.appendChild(row);
   }
+
+  // Display the correlation matrix
+  const correlationDiv = document.getElementById(`correlation-${pid}`);
+  correlationDiv.innerHTML = '<h4>Correlation Matrix</h4>';
+  correlationMatrix.forEach(correlation => {
+    const p = document.createElement('p');
+    p.textContent = `${correlation.stock1} ↔ ${correlation.stock2}: ${correlation.correlation.toFixed(4)}`;
+    correlationDiv.appendChild(p);
+  });
 }
 
 async function renderPortfolio(pid) {
@@ -218,13 +234,9 @@ async function depositCash(pid) {
   loadPortfolios();
 }
 
-async function withdrawCash(pid, money) {
+async function withdrawCash(pid) {
   const amt = prompt('Amount to withdraw:');
   if (!amt) return;
-  if (amt > money) {
-    alert('Insufficient funds!');
-    return;
-  }
   await apiFetch(`/api/portfolios/${pid}/withdraw`, {
     method: 'POST',
     body: JSON.stringify({ amount: parseFloat(amt) }),
@@ -427,6 +439,27 @@ function renderStockGraph(stock, labels, prices) {
 
     // Show the dialog
     dialog.showModal();
+}
+
+async function viewTransactions(pid) {
+  const res = await apiFetch(`/api/portfolios/${pid}/transactions`);
+  const { cashTransactions, stockTransactions } = await res.json();
+
+  let transactionsHtml = '<h4>Cash Transactions</h4><ul>';
+  for (const tx of cashTransactions) {
+    transactionsHtml += `<li> $${tx.amount.toFixed(2)} (Source: ${tx.source}, Destination: ${tx.destination})</li>`;
+  }
+  transactionsHtml += '</ul><h4>Stock Transactions</h4><ul>';
+  for (const tx of stockTransactions) {
+    transactionsHtml += `<li>${tx.stock}: ${tx.shares} shares</li>`;
+  }
+  transactionsHtml += '</ul>';
+
+  const transactionsContent = document.getElementById('transactionsContent');
+  transactionsContent.innerHTML = transactionsHtml;
+
+  const transactionsDialog = document.getElementById('transactionsDialog');
+  transactionsDialog.showModal(); // Open the dialog
 }
 
 // --- Predictions ---

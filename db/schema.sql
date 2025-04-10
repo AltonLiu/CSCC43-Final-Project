@@ -40,6 +40,14 @@ CREATE TABLE holdings (
   shares INTEGER NOT NULL
 );
 
+CREATE TABLE cashtransactions (
+  tid SERIAL PRIMARY KEY,
+  pid INTEGER REFERENCES portfolios(pid) ON DELETE CASCADE,
+  amount NUMERIC(12,2) NOT NULL,
+  source TEXT,
+  destination TEXT
+);
+
 -- Stock Lists
 CREATE TABLE stocklists (
   lid SERIAL PRIMARY KEY,

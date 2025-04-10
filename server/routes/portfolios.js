@@ -74,6 +74,44 @@ router.get('/:pid', async (req, res) => {
 
         portfolio.totalStockValue = totalStockValue;
 
+        // Calculate coefficient of variation and beta for each stock
+        const statsResult = await pool.query(
+            `SELECT stockdata.stock AS stock,
+                    CAST(STDDEV(stockdata.close) / AVG(stockdata.close) AS FLOAT) AS coefficient_of_variation,
+                    (COVAR_POP(stockdata.close, spy_data.close) / VAR_POP(spy_data.close)) AS beta
+             FROM stockdata
+             JOIN stockdata spy_data 
+               ON spy_data.stock = 'SPY' AND spy_data.date = stockdata.date
+             WHERE stockdata.stock IN (SELECT stock FROM holdings WHERE pid = $1)
+             GROUP BY stockdata.stock`,
+            [pid]
+        );
+
+        // Add stats to each stock in holdings
+        portfolio.holdings = portfolio.holdings.map(holding => {
+            const stats = statsResult.rows.find(stat => stat.stock === holding.stock);
+            return {
+                ...holding,
+                coefficient_of_variation: stats ? stats.coefficient_of_variation : null,
+                beta: stats ? stats.beta : null,
+            };
+        });
+
+        // Calculate correlation matrix for stocks in the portfolio
+        const correlationResult = await pool.query(
+            `SELECT s1.stock AS stock1, s2.stock AS stock2, 
+                    CORR(s1.close, s2.close) AS correlation
+             FROM stockdata s1
+             JOIN stockdata s2 ON s1.date = s2.date
+             WHERE s1.stock IN (SELECT stock FROM holdings WHERE pid = $1)
+               AND s2.stock IN (SELECT stock FROM holdings WHERE pid = $1)
+               AND s1.stock < s2.stock
+             GROUP BY s1.stock, s2.stock`,
+            [pid]
+        );
+
+        portfolio.correlationMatrix = correlationResult.rows;
+
         res.json(portfolio);
     } catch (err) {
         console.error(err);
@@ -102,15 +140,27 @@ router.post('/:pid/deposit', async (req, res) => {
     const { amount } = req.body;
 
     try {
-        // Update the portfolio's money
+        await pool.query('BEGIN');
+
+        // Update portfolio cash
         await pool.query(
             'UPDATE portfolios SET money = money + $1 WHERE pid = $2',
             [amount, pid]
         );
+
+        // Record the cash transaction
+        await pool.query(
+            `INSERT INTO cashtransactions (pid, amount, source, destination)
+             VALUES ($1, $2, 'external', (SELECT name FROM portfolios WHERE pid = $1))`,
+            [pid, amount]
+        );
+
+        await pool.query('COMMIT');
         res.json({ message: 'Deposit successful' });
     } catch (err) {
+        await pool.query('ROLLBACK');
         console.error(err);
-        res.status(500).json({ error: 'Failed to deposit money' });
+        res.status(500).json({ error: 'Failed to deposit cash' });
     }
 });
 
@@ -119,15 +169,27 @@ router.post('/:pid/withdraw', async (req, res) => {
     const { amount } = req.body;
 
     try {
-        // Update the portfolio's money
+        await pool.query('BEGIN');
+
+        // Update portfolio cash
         await pool.query(
-            'UPDATE portfolios SET money = money - $1 WHERE pid = $2',
+            'UPDATE portfolios SET money = money - $1 WHERE pid = $2 AND money >= $1',
             [amount, pid]
         );
+
+        // Record the cash transaction
+        await pool.query(
+            `INSERT INTO cashtransactions (pid, amount, source, destination)
+             VALUES ($1, $2, (SELECT name FROM portfolios WHERE pid = $1), 'external')`,
+            [pid, -amount]
+        );
+
+        await pool.query('COMMIT');
         res.json({ message: 'Withdrawal successful' });
     } catch (err) {
+        await pool.query('ROLLBACK');
         console.error(err);
-        res.status(500).json({ error: 'Failed to withdraw money' });
+        res.status(500).json({ error: 'Failed to withdraw cash' });
     }
 });
 
@@ -135,7 +197,6 @@ router.post('/transfer', async (req, res) => {
     const { fromPid, toPid, amount } = req.body;
 
     try {
-        // Start a transaction
         await pool.query('BEGIN');
 
         // Deduct funds from the source portfolio
@@ -154,15 +215,24 @@ router.post('/transfer', async (req, res) => {
             [amount, toPid]
         );
 
-        // Commit the transaction
-        await pool.query('COMMIT');
+        // Record the cash transaction
+        await pool.query(
+            `INSERT INTO cashtransactions (pid, amount, source, destination)
+             VALUES ($1, $2, (SELECT name FROM portfolios WHERE pid = $1), (SELECT name FROM portfolios WHERE pid = $3))`,
+            [fromPid, -amount, toPid]
+        );
+        await pool.query(
+            `INSERT INTO cashtransactions (pid, amount, source, destination)
+             VALUES ($3, $2, (SELECT name FROM portfolios WHERE pid = $1), (SELECT name FROM portfolios WHERE pid = $3))`,
+             [fromPid, amount, toPid]
+        );
 
+        await pool.query('COMMIT');
         res.json({ message: 'Transfer successful' });
     } catch (err) {
-        // Rollback the transaction in case of an error
         await pool.query('ROLLBACK');
         console.error(err);
-        res.status(500).json({ error: err.message || 'Failed to transfer funds' });
+        res.status(500).json({ error: 'Failed to transfer funds' });
     }
 });
 
@@ -294,6 +364,38 @@ router.delete('/:pid', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to delete portfolio' });
+    }
+});
+
+router.get('/:pid/transactions', async (req, res) => {
+    const { pid } = req.params;
+
+    try {
+        // Fetch cash transactions
+        const cashTransactions = await pool.query(
+            `SELECT CAST(amount AS FLOAT), source, destination
+             FROM cashtransactions
+             WHERE pid = $1
+             ORDER BY tid DESC`,
+            [pid]
+        );
+
+        // Fetch stock transactions (from the holdings table)
+        const stockTransactions = await pool.query(
+            `SELECT stock, shares
+             FROM holdings
+             WHERE pid = $1
+             ORDER BY tid DESC`,
+            [pid]
+        );
+
+        res.json({
+            cashTransactions: cashTransactions.rows,
+            stockTransactions: stockTransactions.rows,
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch transactions' });
     }
 });
 
