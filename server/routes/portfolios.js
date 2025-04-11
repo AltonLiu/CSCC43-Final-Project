@@ -6,6 +6,7 @@ require('dotenv').config();
 // Get all portfolios for a user
 router.get('/', async (req, res) => {
     const { email, name } = req.user;
+    console.log('Fetching portfolios for user:', email);
 
     try {
         // Fetch all portfolios for the user
@@ -172,10 +173,14 @@ router.post('/:pid/withdraw', async (req, res) => {
         await pool.query('BEGIN');
 
         // Update portfolio cash
-        await pool.query(
+        const result = await pool.query(
             'UPDATE portfolios SET money = money - $1 WHERE pid = $2 AND money >= $1',
             [amount, pid]
         );
+
+        if (result.rowCount === 0) {
+            throw new Error('Insufficient funds to withdraw.');
+        }
 
         // Record the cash transaction
         await pool.query(
@@ -189,7 +194,7 @@ router.post('/:pid/withdraw', async (req, res) => {
     } catch (err) {
         await pool.query('ROLLBACK');
         console.error(err);
-        res.status(500).json({ error: 'Failed to withdraw cash' });
+        res.status(500).json({ error: err.message });
     }
 });
 

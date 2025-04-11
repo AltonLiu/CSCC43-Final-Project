@@ -13,11 +13,8 @@ function showSection(sectionId) {
 
   // Show the specified section
   const targetSection = document.getElementById(sectionId);
-  console.log(`Showing section: ${targetSection}`); // Debugging line
   if (targetSection) {
-    console.log(`targetSection.classList: ${targetSection.classList}`); // Debugging line
     targetSection.classList.remove('hidden');
-    console.log(`targetSection.classList after: ${targetSection.classList}`); // Debugging line
   } else {
     console.error(`Section with ID "${sectionId}" not found.`);
   }
@@ -75,7 +72,6 @@ document.getElementById('loginForm').addEventListener('submit', async e => {
 let currentPortfolioId;
 
 async function loadPortfolios() {
-  console.log('Loading portfolios...');
   const res = await apiFetch('/api/portfolios');
   const portfolios = await res.json();
 
@@ -122,8 +118,9 @@ async function loadPortfolios() {
 
     // Load holdings for this portfolio
     loadHoldings(portfolio.pid);
-    populateTransferDropdowns();
   }
+
+  populateTransferDropdowns();
 }
 
 document.getElementById('createPortfolioForm').addEventListener('submit', async (e) => {
@@ -241,17 +238,32 @@ async function depositCash(pid) {
 async function withdrawCash(pid) {
   const amt = prompt('Amount to withdraw:');
   if (!amt) return;
-  await apiFetch(`/api/portfolios/${pid}/withdraw`, {
-    method: 'POST',
-    body: JSON.stringify({ amount: parseFloat(amt) }),
-  });
-  loadPortfolios();
+
+  try {
+    const res = await apiFetch(`/api/portfolios/${pid}/withdraw`, {
+      method: 'POST',
+      body: JSON.stringify({ amount: parseFloat(amt) }),
+    });
+
+    // Check if the response status is not 200
+    if (!res.ok) {
+      const errorData = await res.json(); // Parse the error response
+      throw new Error(errorData.error || 'Failed to withdraw cash');
+    }
+
+    loadPortfolios(); // Reload portfolios to reflect changes
+    alert('Withdrawal successful!');
+  } catch (err) {
+    alert('Failed to withdraw cash: ' + err.message); // Show an alert with the error message
+  }
 }
 
 // Populate the transfer dropdowns with portfolio options
 async function populateTransferDropdowns() {
+  console.log('Populating transfer dropdowns...');
   const res = await apiFetch('/api/portfolios');
   const portfolios = await res.json();
+  console.log('Portfolios:', portfolios);
 
   const fromSelect = document.getElementById('fromPortfolio');
   const toSelect = document.getElementById('toPortfolio');
@@ -362,8 +374,6 @@ async function showStockHistory(stock, range = 'all') {
 
     // Determine the latest date from the history data
     const latestDate = new Date(Math.max(...history.map(entry => new Date(entry.date))));
-
-    console.log('Latest Date:', latestDate);
 
     // Filter the data based on the selected range
     let filteredHistory = history;
