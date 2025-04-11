@@ -101,154 +101,161 @@
     </div>
   </section>
 
-    <!-- Stock List Section -->
-    <section id="stockListSection" class="hidden">
-      <h2>Manage Stock Lists</h2>
-      <p>Create and manage your stock lists. You can share lists with friends or make them public.</p>
-      <form id="stockListForm">
+  <!-- Stock List Section -->
+  <section id="stockListSection" class="hidden">
+    <h2>Manage Stock Lists</h2>
+    <p>Create and manage your stock lists. You can share lists with friends or make them public.</p>
+    <form id="stockListForm">
+      <div class="form-group">
+        <label for="listName">List Name:</label>
+        <input type="text" id="listName" required>
+      </div>
+      <div class="form-group">
+        <label for="stockSymbol">Stock Symbol:</label>
+        <input type="text" id="stockSymbol" placeholder="e.g., AAPL" required>
+      </div>
+      <div class="form-group">
+        <label for="shares">Number of Shares:</label>
+        <input type="text" id="shares" required>
+      </div>
+      <button type="submit">Add to List</button>
+    </form>
+    <h3>Your Stock Lists</h3>
+    <div id="stockLists">
+      <!-- Example list -->
+      <div class="stock-list-item">
+        <h4>My Tech Stocks <small>(Private)</small></h4>
+        <p>AAPL, MSFT, GOOGL</p>
+        <button>Share</button>
+        <button>Delete</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Friends Section -->
+  <section id="friendsSection" class="hidden">
+    <h2>Manage Friends</h2>
+    <div>
+      <h3>Send Friend Request</h3>
+      <form id="friendRequestForm">
         <div class="form-group">
-          <label for="listName">List Name:</label>
-          <input type="text" id="listName" required>
+          <label for="friendEmail">Friend's Email:</label>
+          <input type="email" id="friendEmail" required>
         </div>
-        <div class="form-group">
-          <label for="stockSymbol">Stock Symbol:</label>
-          <input type="text" id="stockSymbol" placeholder="e.g., AAPL" required>
-        </div>
-        <div class="form-group">
-          <label for="shares">Number of Shares:</label>
-          <input type="text" id="shares" required>
-        </div>
-        <button type="submit">Add to List</button>
+        <button type="submit">Send Request</button>
       </form>
-      <h3>Your Stock Lists</h3>
-      <div id="stockLists">
-        <!-- Example list -->
-        <div class="stock-list-item">
-          <h4>My Tech Stocks <small>(Private)</small></h4>
-          <p>AAPL, MSFT, GOOGL</p>
-          <button>Share</button>
-          <button>Delete</button>
-        </div>
-      </div>
-    </section>
+    </div>
+    <div>
+      <h3>Incoming Friend Requests</h3>
+      <ul id="incomingRequests">
+        <!-- Example list item -->
+        <li>user1@example.com <button onclick="processRequest(this, 'accept')">Accept</button> <button
+            onclick="processRequest(this, 'reject')">Reject</button></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Your Friends</h3>
+      <ul id="friendList">
+        <!-- Example list item -->
+        <li>friend@example.com <button onclick="removeFriend(this)">Remove</button></li>
+      </ul>
+    </div>
+  </section>
 
-    <!-- Friends Section -->
-    <section id="friendsSection" class="hidden">
-      <h2>Manage Friends</h2>
-      <div>
-        <h3>Send Friend Request</h3>
-        <form id="friendRequestForm">
-          <div class="form-group">
-            <label for="friendEmail">Friend's Email:</label>
-            <input type="email" id="friendEmail" required>
-          </div>
-          <button type="submit">Send Request</button>
-        </form>
-      </div>
-      <div>
-        <h3>Incoming Friend Requests</h3>
-        <ul id="incomingRequests">
-          <!-- Example list item -->
-          <li>user1@example.com <button onclick="processRequest(this, 'accept')">Accept</button> <button
-              onclick="processRequest(this, 'reject')">Reject</button></li>
-        </ul>
-      </div>
-      <div>
-        <h3>Your Friends</h3>
-        <ul id="friendList">
-          <!-- Example list item -->
-          <li>friend@example.com <button onclick="removeFriend(this)">Remove</button></li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- Reviews Section -->
-    <section id="reviewsSection" class="hidden">
-      <h2>Stock List Reviews</h2>
-      <div>
-        <h3>Write a Review</h3>
-        <form id="reviewForm">
-          <div class="form-group">
-            <label for="reviewList">Select Stock List:</label>
-            <select id="reviewList">
-              <option value="list1">My Tech Stocks</option>
-              <!-- More options could be populated dynamically -->
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="reviewText">Review:</label>
-            <textarea id="reviewText" rows="4" placeholder="Write your review here..." maxlength="4000"
-              required></textarea>
-          </div>
-          <button type="submit">Submit Review</button>
-        </form>
-      </div>
-      <div>
-        <h3>Existing Reviews</h3>
-        <div id="reviewDisplay">
-          <!-- Reviews will be displayed here -->
-          <p><strong>My Tech Stocks:</strong> Great selection of stocks! <em>- friend@example.com</em></p>
-        </div>
-      </div>
-    </section>
-
-    <!-- For updating the database with new stock data -->
-    <section id="dataInputSection" class="hidden">
-      <h2>Data Input</h2>
-      <form id="addStockForm">
+  <!-- Reviews Section -->
+  <section id="reviewsSection" class="hidden">
+    <h2>Stock List Reviews</h2>
+    <div>
+      <h3>Write a Review</h3>
+      <form id="reviewForm">
         <div class="form-group">
-          <label for="inputSymbol">Stock Symbol:</label>
-          <input type="text" id="inputSymbol" placeholder="e.g., AAPL" required>
+          <label for="reviewList">Select Stock List:</label>
+          <select id="reviewList">
+            <option value="list1">My Tech Stocks</option>
+            <!-- More options could be populated dynamically -->
+          </select>
         </div>
         <div class="form-group">
-          <label for="stockDate">Date:</label>
-          <input type="date" id="stockDate" placeholder="YYYY-MM-DD" required>
+          <label for="reviewText">Review:</label>
+          <textarea id="reviewText" rows="4" placeholder="Write your review here..." maxlength="4000"
+            required></textarea>
         </div>
-        <div class="form-group">
-          <label for="stockOpen">Open Price:</label>
-          <input type="number" id="stockOpen" step="0.01" required>
-        </div>
-        <div class="form-group">
-          <label for="stockHigh">High Price:</label>
-          <input type="number" id="stockHigh" step="0.01" required>
-        </div>
-        <div class="form-group">
-          <label for="stockLow">Low Price:</label>
-          <input type="number" id="stockLow" step="0.01" required>
-        </div>
-        <div class="form-group">
-          <label for="stockClose">Close Price:</label>
-          <input type="number" id="stockClose" step="0.01" required>
-        </div>
-        <div class="form-group">
-          <label for="stockVolume">Volume:</label>
-          <input type="number" id="stockVolume" required>
-        </div>
-        <button type="submit">Add Stock Data</button>
+        <button type="submit">Submit Review</button>
       </form>
-    </section>
-
-    <dialog id="stockGraphDialog">
-      <h3>Stock Performance</h3>
-      <div>
-        <button onclick="updateStockHistory('all')">All Time</button>
-        <button onclick="updateStockHistory('year')">Last Year</button>
-        <button onclick="updateStockHistory('month')">Last Month</button>
-        <button onclick="updateStockHistory('week')">Last Week</button>
+    </div>
+    <div>
+      <h3>Existing Reviews</h3>
+      <div id="reviewDisplay">
+        <!-- Reviews will be displayed here -->
+        <p><strong>My Tech Stocks:</strong> Great selection of stocks! <em>- friend@example.com</em></p>
       </div>
-      <canvas id="stockGraphCanvas"></canvas>
-      <button type="button" onclick="document.getElementById('stockGraphDialog').close()">Close</button>
-    </dialog>
+    </div>
+  </section>
 
-    <dialog id="transactionsDialog">
-      <h3>Transactions</h3>
-      <div id="transactionsContent">
-        <!-- Transactions will be dynamically populated here -->
+  <!-- For updating the database with new stock data -->
+  <section id="dataInputSection" class="hidden">
+    <h2>Data Input</h2>
+    <form id="addStockForm">
+      <div class="form-group">
+        <label for="inputSymbol">Stock Symbol:</label>
+        <input type="text" id="inputSymbol" placeholder="e.g., AAPL" required>
       </div>
-      <button type="button" onclick="document.getElementById('transactionsDialog').close()">Close</button>
-    </dialog>
+      <div class="form-group">
+        <label for="stockDate">Date:</label>
+        <input type="date" id="stockDate" placeholder="YYYY-MM-DD" required>
+      </div>
+      <div class="form-group">
+        <label for="stockOpen">Open Price:</label>
+        <input type="number" id="stockOpen" step="0.01" required>
+      </div>
+      <div class="form-group">
+        <label for="stockHigh">High Price:</label>
+        <input type="number" id="stockHigh" step="0.01" required>
+      </div>
+      <div class="form-group">
+        <label for="stockLow">Low Price:</label>
+        <input type="number" id="stockLow" step="0.01" required>
+      </div>
+      <div class="form-group">
+        <label for="stockClose">Close Price:</label>
+        <input type="number" id="stockClose" step="0.01" required>
+      </div>
+      <div class="form-group">
+        <label for="stockVolume">Volume:</label>
+        <input type="number" id="stockVolume" required>
+      </div>
+      <button type="submit">Add Stock Data</button>
+    </form>
+  </section>
 
-    <script src="js/main.js"></script>
+  <dialog id="stockGraphDialog">
+    <h3>Stock Performance</h3>
+    <div>
+      <!-- Buttons for past performance -->
+      <button onclick="updateStockHistory('all')">All Time</button>
+      <button onclick="updateStockHistory('year')">Last Year</button>
+      <button onclick="updateStockHistory('month')">Last Month</button>
+      <button onclick="updateStockHistory('week')">Last Week</button>
+    </div>
+    <div>
+      <!-- Buttons for predictions -->
+      <button onclick="showStockPredictions(currentStock, 'week')">Next Week</button>
+      <button onclick="showStockPredictions(currentStock, 'month')">Next Month</button>
+      <button onclick="showStockPredictions(currentStock, 'year')">Next Year</button>
+    </div>
+    <canvas id="stockGraphCanvas"></canvas>
+    <button type="button" onclick="document.getElementById('stockGraphDialog').close()">Close</button>
+  </dialog>
+
+  <dialog id="transactionsDialog">
+    <h3>Transactions</h3>
+    <div id="transactionsContent">
+      <!-- Transactions will be dynamically populated here -->
+    </div>
+    <button type="button" onclick="document.getElementById('transactionsDialog').close()">Close</button>
+  </dialog>
+
+  <script src="js/main.js"></script>
 </body>
 
 </html>

@@ -9,7 +9,6 @@ const portfolios = require('./routes/portfolios');
 const stocklists = require('./routes/stocklists');
 const friends = require('./routes/friends');
 const reviews = require('./routes/reviews');
-const predictions = require('./routes/predictions');
 const stocks = require('./routes/stocks');
 
 const app = express();
@@ -41,7 +40,6 @@ app.use('/api/portfolios', portfolios);
 app.use('/api/stocklists', stocklists);
 app.use('/api/friends', friends);
 app.use('/api/reviews', reviews);
-app.use('/api/predictions', predictions);
 app.use('/api/stocks', stocks);
 
 const PORT = process.env.PORT || 3000;

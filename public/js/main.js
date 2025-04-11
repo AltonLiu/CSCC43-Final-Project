@@ -29,7 +29,7 @@ async function register(email, name, password) {
     method: 'POST',
     body: JSON.stringify({ email, name, password })
   });
-  if (!res.ok) throw new Error('Registration failed');
+  if (!res.ok) throw new Error('Registration failed: ' + (await res.json()).error);
   
   alert('Registered! Please log in.');
 }
@@ -402,47 +402,77 @@ async function updateStockHistory(range) {
     }
 }
 
+let currentStock = null; // Track the currently selected stock
+
+async function fetchPredictions(stock, range) {
+  const res = await apiFetch('/api/stocks/predict', {
+    method: 'POST',
+    body: JSON.stringify({ stock, range }),
+  });
+  if (!res.ok) {
+    throw new Error('Failed to fetch predictions');
+  }
+  return res.json();
+}
+
+async function showStockPredictions(stock, range) {
+  try {
+    // Fetch predictions
+    const predictions = await fetchPredictions(stock, range);
+
+    // Extract prediction data
+    const predictionLabels = predictions.predictions.map(p => new Date(p.date).toLocaleDateString());
+    const predictionPrices = predictions.predictions.map(p => parseFloat(p.price));
+
+    // Render the graph with predictions
+    renderStockGraph(stock, predictionLabels, predictionPrices, `Predicted Performance (${range})`);
+  } catch (err) {
+    alert('Failed to fetch predictions: ' + err.message);
+  }
+}
+
 let currentChart = null; // Variable to store the current chart instance
 
 // Function to render the stock graph
-function renderStockGraph(stock, labels, prices) {
-    const dialog = document.getElementById('stockGraphDialog');
-    const canvas = document.getElementById('stockGraphCanvas');
+function renderStockGraph(stock, labels, prices, label = 'Historical Performance') {
+  const dialog = document.getElementById('stockGraphDialog');
+  const canvas = document.getElementById('stockGraphCanvas');
 
-    // Destroy the existing chart if it exists
-    if (currentChart) {
-        currentChart.destroy();
-    }
+  // Destroy the existing chart if it exists
+  if (currentChart) {
+    currentChart.destroy();
+  }
 
-    // Create a new chart
-    currentChart = new Chart(canvas, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: `Historical Performance of ${stock}`,
-                data: prices,
-                borderColor: 'blue',
-                fill: false,
-            }]
+  // Create a new chart
+  currentChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: `${label} of ${stock}`,
+        data: prices,
+        borderColor: label.includes('Predicted') ? 'red' : 'blue',
+        borderDash: label.includes('Predicted') ? [5, 5] : [],
+        fill: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        x: { title: { display: true, text: 'Date' } },
+        y: { title: { display: true, text: 'Price ($)' } },
+      },
+      plugins: {
+        legend: {
+          position: 'top',
         },
-        options: {
-            responsive: true, // Make the chart responsive
-            maintainAspectRatio: true, // Allow the chart to fill the container
-            scales: {
-                x: { title: { display: true, text: 'Date' } },
-                y: { title: { display: true, text: 'Price ($)' } }
-            },
-            plugins: {
-                legend: {
-                    position: 'top', // Adjust legend position
-                }
-            }
-        }
-    });
+      },
+    },
+  });
 
-    // Show the dialog
-    dialog.showModal();
+  // Show the dialog
+  dialog.showModal();
 }
 
 async function viewTransactions(pid) {
