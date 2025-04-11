@@ -37,11 +37,11 @@ function needsAuth(req, res, next) {
 
 // API
 app.use('/api/auth', authRoutes);
-app.use('/api/portfolios', portfolios);
-app.use('/api/stocklists', stocklists);
-app.use('/api/friends', friends);
-app.use('/api/reviews', reviews);
-app.use('/api/stocks', stocks);
+app.use('/api/portfolios', needsAuth, portfolios);
+app.use('/api/stocklists', needsAuth, stocklists);
+app.use('/api/friends', needsAuth, friends);
+app.use('/api/reviews', needsAuth, reviews);
+app.use('/api/stocks', needsAuth, stocks);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
