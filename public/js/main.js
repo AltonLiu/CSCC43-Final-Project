@@ -552,11 +552,12 @@ async function requestFriend() {
 
   if (res.ok) {
     alert("Friend request sent!");
-    updateFriends();
   } else {
     const errorData = await res.json();
     alert("Error: " + (errorData.error || "Failed to send friend request"));
   }
+
+  updateFriends();
 }
 
 async function processRequest(e, action) {
