@@ -552,6 +552,7 @@ async function requestFriend() {
 
   if (res.ok) {
     alert("Friend request sent!");
+    updateFriends();
   } else {
     const errorData = await res.json();
     alert("Error: " + (errorData.error || "Failed to send friend request"));
@@ -564,6 +565,7 @@ async function processRequest(e, action) {
     method: 'POST',
     body: JSON.stringify({ email, action })
   });
+  updateFriends();
 }
 
 async function removeFriend(e) {
@@ -572,6 +574,7 @@ async function removeFriend(e) {
     method: 'DELETE',
     body: JSON.stringify({ email })
   });
+  updateFriends();
 }
 
 async function updateFriends() {
