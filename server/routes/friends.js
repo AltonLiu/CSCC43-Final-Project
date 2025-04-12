@@ -7,8 +7,24 @@ router.post("/requests", async (req, res) => {
   const receiver = req.body.email;
 
   try {
-    // See if there is already a past request
+    // Don't allow friending yourself
+    if (email === receiver) {
+      res.status(400).json({ error: "You cannot friend yourself" });
+      return;
+    }
+
+    // Don't allow friending someone who requested you already
     let result = await pool.query(
+      "SELECT sender FROM friends WHERE sender = $1 AND receiver = $2 AND status = 'pending'",
+      [receiver, email]
+    );
+    if (result.rows.length > 0) {
+      res.status(400).json({ error: "There is already a pending request from this user" });
+      return;
+    }
+
+    // See if there is already a past request
+    result = await pool.query(
       "SELECT date, status FROM friends WHERE sender = $1 AND receiver = $2",
       [email, receiver]
     );
