@@ -669,6 +669,7 @@ function renderStockList(list, visibility) {
     <button onclick="toggleStockListVisibility(${list.lid}, '${visibility}')">
       ${visibility === 'public' ? 'Make Private' : 'Make Public'}
     </button>
+    <button onclick="deleteStockList(${list.lid})" style="color: red;">Delete</button>
     <div>
         <h5>Stocks in List</h5>
         <table>
@@ -825,6 +826,28 @@ async function toggleStockListVisibility(stockListId, currentVisibility) {
     loadStockLists(); // Reload stock lists to reflect changes
   } catch (err) {
     alert('Failed to update stock list visibility: ' + err.message);
+  }
+}
+
+async function deleteStockList(lid) {
+  if (!confirm('Are you sure you want to delete this stock list? This action cannot be undone.')) {
+    return;
+  }
+
+  try {
+    const res = await apiFetch(`/api/stocklists/${lid}/delete`, {
+      method: 'DELETE',
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to delete stock list');
+    }
+
+    alert('Stock list deleted successfully!');
+    loadStockLists(); // Reload stock lists to reflect changes
+  } catch (err) {
+    alert('Failed to delete stock list: ' + err.message);
   }
 }
 
