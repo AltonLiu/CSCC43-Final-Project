@@ -579,14 +579,24 @@ async function removeFriend(e) {
 }
 
 async function updateFriends() {
-  const requests = await (await apiFetch("/api/friends/requests")).json();
-  const domRequests = document.getElementById("incomingRequests");
-  domRequests.innerHTML = "";
-  for (const row of requests) {
+  const inRequests = await (await apiFetch("/api/friends/requests/in")).json();
+  const domInRequests = document.getElementById("incomingRequests");
+  domInRequests.innerHTML = "";
+  for (const row of inRequests) {
     const item = document.createElement("li");
     item.innerHTML = `${row.sender} <button onclick="processRequest(this, 'accept')">Accept</button> <button onclick="processRequest(this, 'reject')">Reject</button>`;
     item.dataset.user = row.sender;
-    domRequests.appendChild(item);
+    domInRequests.appendChild(item);
+  }
+
+  const outRequests = await (await apiFetch("/api/friends/requests/out")).json();
+  const domOutRequests = document.getElementById("outgoingRequests");
+  domOutRequests.innerHTML = "";
+  for (const row of outRequests) {
+    const item = document.createElement("li");
+    item.innerHTML = row.receiver;
+    item.dataset.user = row.receiver;
+    domOutRequests.appendChild(item);
   }
 
   const friends = await (await apiFetch("/api/friends")).json();

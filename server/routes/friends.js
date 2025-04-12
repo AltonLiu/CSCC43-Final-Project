@@ -63,12 +63,27 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/requests", async (req, res) => {
+router.get("/requests/in", async (req, res) => {
   const { email } = req.user;
 
   try {
     const result = await pool.query(
       "SELECT sender FROM friends WHERE receiver = $1 AND status = 'pending'",
+      [email]
+    );
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to get friend requests" });
+  }
+});
+
+router.get("/requests/out", async (req, res) => {
+  const { email } = req.user;
+
+  try {
+    const result = await pool.query(
+      "SELECT receiver FROM friends WHERE sender = $1 AND status = 'pending'",
       [email]
     );
     res.status(200).json(result.rows);
