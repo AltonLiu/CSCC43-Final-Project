@@ -63,7 +63,10 @@ router.get('/', async (req, res) => {
         );
 
         const sharedLists = await pool.query(
-            `SELECT * FROM stocklists WHERE uid = $1 AND visibility = 'shared'`,
+            `SELECT sl.*
+             FROM stocklists sl
+             JOIN stocklistsharedwith sw ON sl.lid = sw.lid
+             WHERE sw.uid = $1 OR (sl.uid = $1 AND sl.visibility = 'shared')`,
             [userId]
         );
 
@@ -132,7 +135,7 @@ router.get('/:lid', async (req, res) => {
 });
 
 // --- Delete a Stock List ---
-router.delete('/:lid', async (req, res) => {
+router.delete('/:lid/delete', async (req, res) => {
     const { lid } = req.params;
     const userId = req.user.email;
 
