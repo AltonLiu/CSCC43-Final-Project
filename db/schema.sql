@@ -80,9 +80,9 @@ CREATE TABLE friends (
 
 -- Reviews
 CREATE TABLE reviews (
-  rid SERIAL PRIMARY KEY,
   lid INTEGER REFERENCES stocklists(lid) ON DELETE CASCADE,
   uid TEXT REFERENCES users(email) ON DELETE CASCADE,
   date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  text TEXT NOT NULL
+  text TEXT NOT NULL,
+  PRIMARY KEY(lid, uid)
 );
