@@ -137,7 +137,7 @@
     <h2>Manage Friends</h2>
     <div>
       <h3>Send Friend Request</h3>
-      <form id="friendRequestForm">
+      <form id="friendRequestForm" onsubmit="requestFriend()">
         <div class="form-group">
           <label for="friendEmail">Friend's Email:</label>
           <input type="email" id="friendEmail" required>
@@ -149,7 +149,7 @@
       <h3>Incoming Friend Requests</h3>
       <ul id="incomingRequests">
         <!-- Example list item -->
-        <li>user1@example.com <button onclick="processRequest(this, 'accept')">Accept</button> <button
+        <li data-user="user1@example.com">user1@example.com <button onclick="processRequest(this, 'accept')">Accept</button> <button
             onclick="processRequest(this, 'reject')">Reject</button></li>
       </ul>
     </div>
@@ -157,7 +157,7 @@
       <h3>Your Friends</h3>
       <ul id="friendList">
         <!-- Example list item -->
-        <li>friend@example.com <button onclick="removeFriend(this)">Remove</button></li>
+        <li data-user="friend@example.com">friend@example.com <button onclick="removeFriend(this)">Remove</button></li>
       </ul>
     </div>
   </section>

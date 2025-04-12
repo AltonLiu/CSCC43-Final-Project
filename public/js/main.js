@@ -27,7 +27,7 @@ async function register(email, name, password) {
     body: JSON.stringify({ email, name, password })
   });
   if (!res.ok) throw new Error('Registration failed: ' + (await res.json()).error);
-  
+
   alert('Registered! Please log in.');
 }
 
@@ -538,6 +538,31 @@ document.getElementById('addStockForm').addEventListener('submit', async (e) => 
     alert('Failed to add stock data: ' + err.message);
   }
 });
+
+// --- Friends ---
+async function requestFriend() {
+  const email = document.getElementById("friendEmail").value;
+  await apiFetch('/api/friends/request', {
+    method: 'POST',
+    body: JSON.stringify({ email })
+  });
+}
+
+async function processRequest(e, action) {
+  const email = e.parentElement.dataset.user;
+  await apiFetch('/api/friends/manage', {
+    method: 'POST',
+    body: JSON.stringify({ email, action })
+  });
+}
+
+async function removeFriend(e) {
+  const email = e.parentElement.dataset.user;
+  await apiFetch('/api/friends', {
+    method: 'DELETE',
+    body: JSON.stringify({ email })
+  });
+}
 
 // --- Initialization ---
 window.onload = () => {
