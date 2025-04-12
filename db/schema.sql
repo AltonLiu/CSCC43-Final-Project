@@ -63,6 +63,12 @@ CREATE TABLE stocklistitems (
   PRIMARY KEY(lid, stock)
 );
 
+CREATE TABLE stocklistsharedwith (
+  lid INTEGER REFERENCES stocklists(lid) ON DELETE CASCADE,
+  uid TEXT REFERENCES users(email) ON DELETE CASCADE,
+  PRIMARY KEY(lid, uid)
+);
+
 -- Friends
 CREATE TABLE friends (
   sender TEXT REFERENCES users(email) ON DELETE CASCADE,

@@ -3,12 +3,28 @@ function apiFetch(path, options = {}) {
   const token = localStorage.getItem('token');
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  return fetch(path, { headers, ...options });
+  return fetch(path, { headers, ...options })
+    .then(async (res) => {
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('API Error:', errorData.error || 'Unknown error');
+        throw new Error(errorData.error || 'Unknown error');
+      }
+      return res;
+    })
+    .catch((err) => {
+      console.error('Fetch Error:', err.message);
+      throw err;
+    });
 }
 
 function showSection(sectionId) {
   if (sectionId === "friendsSection")
     updateFriends();
+  else if (sectionId === "stockListSection")
+    loadStockLists();
+  else if (sectionId === "portfolioSection")
+    loadPortfolios();
 
   // Hide all sections
   const sections = document.querySelectorAll('section');
@@ -410,9 +426,9 @@ async function showStockHistory(stock, range = 'all') {
 }
 
 async function updateStockHistory(range) {
-    if (currentStock) {
-        await showStockHistory(currentStock, range);
-    }
+  if (currentStock) {
+    await showStockHistory(currentStock, range);
+  }
 }
 
 let currentStock = null; // Track the currently selected stock
@@ -609,6 +625,223 @@ async function updateFriends() {
     domFriends.appendChild(item);
   }
 }
+
+// --- Stock Lists ---
+async function loadStockLists() {
+  const res = await apiFetch('/api/stocklists');
+  const { privateLists, sharedLists, publicLists } = await res.json();
+  console.log('Stock Lists:', privateLists, sharedLists, publicLists);
+
+  // Populate Private Stock Lists
+  const privateContainer = document.getElementById('privateStockLists');
+  privateContainer.innerHTML = '';
+  if (privateLists.length > 0) {
+    for (const list of privateLists) {
+      console.log('Rendering private list:', list);
+      privateContainer.appendChild(renderStockList(list, 'private'));
+    }
+  } else {
+    privateContainer.innerHTML = '<p>No private stock lists available.</p>';
+  }
+
+  // Populate Shared Stock Lists
+  const sharedContainer = document.getElementById('sharedStockLists');
+  sharedContainer.innerHTML = '';
+
+  if (sharedLists.length > 0) {
+    for (const list of sharedLists) {
+      console.log('Rendering shared list:', list);
+      sharedContainer.appendChild(renderStockList(list, 'shared'));
+    }
+  } else {
+    sharedContainer.innerHTML = '<p>No shared stock lists available.</p>';
+  }
+
+  // Populate Public Stock Lists
+  const publicContainer = document.getElementById('publicStockLists');
+  publicContainer.innerHTML = '';
+  if (publicLists.length > 0) {
+    for (const list of publicLists) {
+      console.log('Rendering public list:', list);
+      publicContainer.appendChild(renderStockList(list, 'public'));
+    }
+  } else {
+    publicContainer.innerHTML = '<p>No public stock lists available.</p>';
+  }
+}
+
+// Render a stock list
+function renderStockList(list, visibility) {
+  const div = document.createElement('div');
+  div.className = 'stock-list';
+  div.innerHTML = `
+    <h4>${list.name} <small>(${visibility})</small></h4>
+    <button onclick="openAddStockDialog(${list.lid})">Add Stock</button>
+    <button onclick="openShareStockDialog(${list.lid})">Share</button>
+    <button onclick="toggleStockListVisibility(${list.lid}, '${visibility}')">
+      ${visibility === 'public' ? 'Make Private' : 'Make Public'}
+    </button>
+    <div>
+        <h5>Stocks in List</h5>
+        <table>
+          <thead>
+            <tr>
+              <th>Stock Symbol</th>
+              <th>Shares</th>
+              <th>Coefficient of Variation</th>
+              <th>Beta</th>
+            </tr>
+          </thead>
+          <tbody id="stocks-${list.lid}">
+            <!-- Stocks will be dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+      <div id="correlation-${list.lid}">
+        <!-- Correlation matrix will be dynamically populated -->
+      </div>
+  `;
+  loadStockListDetails(list.lid);
+  return div;
+}
+
+async function loadStockListDetails(listId) {
+  console.log('Loading stock list details for ID:', listId);
+  const res = await apiFetch(`/api/stocklists/${listId}`);
+  const { stocks, correlationMatrix } = await res.json();
+
+  // Populate the stocks table
+  const tbody = document.getElementById(`stocks-${listId}`);
+  tbody.innerHTML = ''; // Clear existing rows
+
+  for (const stock of stocks) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${stock.symbol}</td>
+      <td>${stock.shares}</td>
+      <td>${stock.coefficient_of_variation ? stock.coefficient_of_variation.toFixed(4) : 'N/A'}</td>
+      <td>${stock.beta ? stock.beta.toFixed(4) : 'N/A'}</td>
+    `;
+    tbody.appendChild(row);
+  }
+
+  // Populate the correlation matrix
+  const correlationDiv = document.getElementById(`correlation-${listId}`);
+  correlationDiv.innerHTML = '<h5>Correlation Matrix</h5>';
+  correlationMatrix.forEach(correlation => {
+    const p = document.createElement('p');
+    p.textContent = `${correlation.stock1} ↔ ${correlation.stock2}: ${correlation.value.toFixed(4)}`;
+    correlationDiv.appendChild(p);
+  });
+}
+
+// Open the Add Stock dialog
+function openAddStockDialog(stockListId) {
+  currentStockListId = stockListId; // Store the current stock list ID
+  const dialog = document.getElementById('addStockDialog');
+  dialog.showModal();
+}
+
+// Add a stock to a stock list
+async function addStockToList(e) {
+  e.preventDefault();
+
+  const stockSymbol = document.getElementById('stockSymbol').value;
+  const shares = parseInt(document.getElementById('shares').value, 10);
+
+  try {
+    await apiFetch(`/api/stocklists/${currentStockListId}/add`, {
+      method: 'POST',
+      body: JSON.stringify({ stock: stockSymbol, shares }),
+    });
+
+    alert('Stock added successfully!');
+    document.getElementById('addStockToListForm').reset();
+    document.getElementById('addStockDialog').close();
+    loadStockLists(); // Reload stock lists to reflect changes
+  } catch (err) {
+    alert('Failed to add stock: ' + err.message);
+  }
+}
+
+// Create a new stock list
+async function createStockList(e) {
+  e.preventDefault();
+
+  const name = document.getElementById('listName').value;
+
+  try {
+    const res = await apiFetch('/api/stocklists/new', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to create stock list');
+    }
+
+    alert('Stock list created successfully!');
+    document.getElementById('createStockListForm').reset();
+    loadStockLists();
+  } catch (err) {
+    alert('Failed to create stock list: ' + err.message);
+  }
+}
+
+let currentStockListId = null;
+
+function openShareStockDialog(stockListId) {
+  currentStockListId = stockListId;
+  const dialog = document.getElementById('shareStockDialog');
+  dialog.showModal();
+}
+
+// Share a Stock List
+document.getElementById('shareStockForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  console.log('Sharing stock list with ID:', currentStockListId);
+  const email = document.getElementById('shareEmail').value;
+  const res = await apiFetch(`/api/stocklists/${currentStockListId}/share`, {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    alert('Failed to share stock list: ' + (errorData.error || 'Unknown error'));
+  } else {
+    alert('Stock list shared successfully!');
+    document.getElementById('shareStockForm').reset();
+    document.getElementById('shareStockDialog').close();
+  }
+});
+
+// Toggle Stock List Visibility
+async function toggleStockListVisibility(stockListId, currentVisibility) {
+  const newVisibility = currentVisibility === 'public' ? 'private' : 'public';
+
+  try {
+    const res = await apiFetch(`/api/stocklists/${stockListId}/visibility`, {
+      method: 'PUT',
+      body: JSON.stringify({ visibility: newVisibility }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to update visibility');
+    }
+
+    alert(`Stock list visibility set to ${newVisibility}!`);
+    loadStockLists(); // Reload stock lists to reflect changes
+  } catch (err) {
+    alert('Failed to update stock list visibility: ' + err.message);
+  }
+}
+
+// Event Listeners
+document.getElementById('createStockListForm').addEventListener('submit', createStockList);
+document.getElementById('addStockToListForm').addEventListener('submit', addStockToList);
 
 // --- Initialization ---
 window.onload = () => {

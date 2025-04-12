@@ -103,33 +103,66 @@
 
   <!-- Stock List Section -->
   <section id="stockListSection" class="hidden">
-    <h2>Manage Stock Lists</h2>
-    <p>Create and manage your stock lists. You can share lists with friends or make them public.</p>
-    <form id="stockListForm">
-      <div class="form-group">
-        <label for="listName">List Name:</label>
-        <input type="text" id="listName" required>
+    <h2>Your Stock Lists</h2>
+  
+    <!-- Stock List Categories -->
+    <div id="stockListsContainer">
+      <h3>Private Stock Lists</h3>
+      <div id="privateStockLists">
+        <!-- Private stock lists will be dynamically populated here -->
       </div>
-      <div class="form-group">
-        <label for="stockSymbol">Stock Symbol:</label>
-        <input type="text" id="stockSymbol" placeholder="e.g., AAPL" required>
+  
+      <h3>Shared Stock Lists</h3>
+      <div id="sharedStockLists">
+        <!-- Shared stock lists will be dynamically populated here -->
       </div>
-      <div class="form-group">
-        <label for="shares">Number of Shares:</label>
-        <input type="text" id="shares" required>
-      </div>
-      <button type="submit">Add to List</button>
-    </form>
-    <h3>Your Stock Lists</h3>
-    <div id="stockLists">
-      <!-- Example list -->
-      <div class="stock-list-item">
-        <h4>My Tech Stocks <small>(Private)</small></h4>
-        <p>AAPL, MSFT, GOOGL</p>
-        <button>Share</button>
-        <button>Delete</button>
+  
+      <h3>Public Stock Lists</h3>
+      <div id="publicStockLists">
+        <!-- Public stock lists will be dynamically populated here -->
       </div>
     </div>
+  
+    <!-- Create a New Stock List -->
+    <div>
+      <h3>Create a New Stock List</h3>
+      <form id="createStockListForm">
+        <div class="form-group">
+          <label for="listName">List Name:</label>
+          <input type="text" id="listName" placeholder="Enter stock list name" required>
+        </div>
+        <button type="submit">Create Stock List</button>
+      </form>
+    </div>
+  
+    <!-- Add Stocks to Stock List Dialog -->
+    <dialog id="addStockDialog">
+      <h3>Add Stock to Stock List</h3>
+      <form id="addStockToListForm">
+        <div class="form-group">
+          <label for="stockSymbol">Stock Symbol:</label>
+          <input type="text" id="stockSymbol" placeholder="e.g., AAPL" required>
+        </div>
+        <div class="form-group">
+          <label for="shares">Number of Shares:</label>
+          <input type="number" id="shares" min="1" required>
+        </div>
+        <button type="submit">Add Stock</button>
+      </form>
+      <button type="button" onclick="document.getElementById('addStockDialog').close()">Cancel</button>
+    </dialog>
+
+    <dialog id="shareStockDialog">
+      <h3>Share Stock List</h3>
+      <form id="shareStockForm">
+        <div class="form-group">
+          <label for="shareEmail">User Email:</label>
+          <input type="email" id="shareEmail" placeholder="Enter user's email" required>
+        </div>
+        <button type="submit">Share</button>
+      </form>
+      <button type="button" onclick="document.getElementById('shareStockDialog').close()">Cancel</button>
+    </dialog>
   </section>
 
   <!-- Friends Section -->
