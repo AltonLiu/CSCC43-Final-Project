@@ -851,7 +851,7 @@ async function loadReviews() {
   const reviews = await (await apiFetch("/api/reviews")).json();
   for (const row of reviews) {
     const item = document.createElement("p");
-    item.innerHTML = `<strong>${row.lid}</strong> ${row.text} <em>- ${row.uid}</em>`;
+    item.innerHTML = `<strong>${row.name}</strong> ${row.text} <em>- ${row.uid}</em>`;
     reviewDisplay.appendChild(item);
   }
 }

@@ -21,7 +21,9 @@ router.get("/", async (req, res) => {
   const { email } = req.user;
 
   try {
-    const result = await pool.query("SELECT * FROM reviews");
+    const result = await pool.query(
+      "SELECT name, r.uid, text FROM reviews AS r JOIN stocklists AS s ON r.lid = s.lid"
+    );
     res.status(200).json(result.rows);
   } catch (e) {
     console.error(err);
