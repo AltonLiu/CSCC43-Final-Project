@@ -13,6 +13,8 @@ function showSection(sectionId) {
     loadStockLists();
   else if (sectionId === "portfolioSection")
     loadPortfolios();
+  else if (sectionId === "reviewsSection")
+    loadReviews();
 
   // Hide all sections
   const sections = document.querySelectorAll('section');
@@ -826,6 +828,41 @@ async function toggleStockListVisibility(stockListId, currentVisibility) {
   } catch (err) {
     alert('Failed to update stock list visibility: ' + err.message);
   }
+}
+
+// --- Reviews ---
+async function loadReviews() {
+  const reviewList = document.getElementById("reviewList");
+  reviewList.innerHTML = "";
+
+  const stockLists = await (await apiFetch("/api/stocklists")).json();
+  const lists = stockLists.privateLists.concat(stockLists.sharedLists).concat(stockLists.publicLists);
+  for (const row of lists) {
+    const item = document.createElement("option");
+    item.value = row.lid;
+    item.innerHTML = row.name;
+    reviewList.appendChild(item);
+  }
+
+  const reviewDisplay = document.getElementById("reviewDisplay");
+  reviewDisplay.innerHTML = "";
+
+  const reviews = await (await apiFetch("/api/reviews")).json();
+  for (const row of reviews) {
+    const item = document.createElement("p");
+    item.innerHTML = `<strong>${row.lid}</strong> ${row.text} <em>- ${row.uid}</em>`;
+    reviewDisplay.appendChild(item);
+  }
+}
+
+async function writeReview() {
+  await apiFetch("/api/reviews", {
+    method: "POST",
+    body: JSON.stringify({
+      list: document.getElementById("reviewList").value,
+      text: document.getElementById("reviewText").value
+    })
+  });
 }
 
 // Event Listeners

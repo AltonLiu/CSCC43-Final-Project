@@ -17,6 +17,18 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.get("/", async (req, res) => {
+  const { email } = req.user;
+
+  try {
+    const result = await pool.query("SELECT * FROM reviews");
+    res.status(200).json(result.rows);
+  } catch (e) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to get reviews" });
+  }
+});
+
 router.patch("/", async (req, res) => {
   const { email } = req.user;
   const { list, text } = req.body;

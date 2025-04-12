@@ -104,25 +104,25 @@
   <!-- Stock List Section -->
   <section id="stockListSection" class="hidden">
     <h2>Your Stock Lists</h2>
-  
+
     <!-- Stock List Categories -->
     <div id="stockListsContainer">
       <h3>Private Stock Lists</h3>
       <div id="privateStockLists">
         <!-- Private stock lists will be dynamically populated here -->
       </div>
-  
+
       <h3>Shared Stock Lists</h3>
       <div id="sharedStockLists">
         <!-- Shared stock lists will be dynamically populated here -->
       </div>
-  
+
       <h3>Public Stock Lists</h3>
       <div id="publicStockLists">
         <!-- Public stock lists will be dynamically populated here -->
       </div>
     </div>
-  
+
     <!-- Create a New Stock List -->
     <div>
       <h3>Create a New Stock List</h3>
@@ -134,7 +134,7 @@
         <button type="submit">Create Stock List</button>
       </form>
     </div>
-  
+
     <!-- Add Stocks to Stock List Dialog -->
     <dialog id="addStockDialog">
       <h3>Add Stock to Stock List</h3>
@@ -207,7 +207,7 @@
     <h2>Stock List Reviews</h2>
     <div>
       <h3>Write a Review</h3>
-      <form id="reviewForm">
+      <form id="reviewForm" onsubmit="writeReview()">
         <div class="form-group">
           <label for="reviewList">Select Stock List:</label>
           <select id="reviewList">
