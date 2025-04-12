@@ -3,19 +3,7 @@ function apiFetch(path, options = {}) {
   const token = localStorage.getItem('token');
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  return fetch(path, { headers, ...options })
-    .then(async (res) => {
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error('API Error:', errorData.error || 'Unknown error');
-        throw new Error(errorData.error || 'Unknown error');
-      }
-      return res;
-    })
-    .catch((err) => {
-      console.error('Fetch Error:', err.message);
-      throw err;
-    });
+  return fetch(path, { headers, ...options });
 }
 
 function showSection(sectionId) {
@@ -814,6 +802,7 @@ document.getElementById('shareStockForm').addEventListener('submit', async (e) =
     alert('Stock list shared successfully!');
     document.getElementById('shareStockForm').reset();
     document.getElementById('shareStockDialog').close();
+    loadStockLists(); // Reload stock lists to reflect changes
   }
 });
 

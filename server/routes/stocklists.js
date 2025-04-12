@@ -187,9 +187,9 @@ router.post('/:lid/share', async (req, res) => {
 
         // Step 3: Insert the shared record into the stocklistsharedwith table
         const insertShared = await pool.query(
-            `INSERT INTO stocklistsharedwith (lid, email)
+            `INSERT INTO stocklistsharedwith (lid, uid)
              VALUES ($1, $2)
-             ON CONFLICT (lid, email) DO NOTHING
+             ON CONFLICT (lid, uid) DO NOTHING
              RETURNING *`,
             [lid, email]
         );
