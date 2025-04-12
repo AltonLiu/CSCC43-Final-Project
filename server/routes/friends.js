@@ -2,7 +2,7 @@ const express = require('express');
 const pool = require('../db');
 const router = express.Router();
 
-router.post("/request", async (req, res) => {
+router.post("/requests", async (req, res) => {
   const { email } = req.user;
   const receiver = req.body.email;
 
@@ -17,11 +17,11 @@ router.post("/request", async (req, res) => {
       const { status } = result.rows[0];
       const date = new Date(result.rows[0].date + "GMT"); // Things break unless I put this
 
-      if (status == "pending") {
+      if (status === "pending") {
         res.status(400).json({ error: "There is already a pending request" });
         return;
       }
-      if (status == "accepted") {
+      if (status === "accepted") {
         res.status(400).json({ error: "You are already friends" });
         return;
       }
@@ -44,6 +44,37 @@ router.post("/request", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to send friend request" });
+  }
+});
+
+router.get("/", async (req, res) => {
+  const { email } = req.user;
+
+  try {
+    const result = await pool.query(
+      `SELECT sender AS friend FROM friends WHERE receiver = $1 AND status = 'accepted'
+      UNION SELECT receiver FROM friends WHERE sender = $1 AND status = 'accepted'`,
+      [email]
+    );
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to get friends" });
+  }
+});
+
+router.get("/requests", async (req, res) => {
+  const { email } = req.user;
+
+  try {
+    const result = await pool.query(
+      "SELECT sender FROM friends WHERE receiver = $1 AND status = 'pending'",
+      [email]
+    );
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to get friend requests" });
   }
 });
 

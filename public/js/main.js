@@ -7,6 +7,9 @@ function apiFetch(path, options = {}) {
 }
 
 function showSection(sectionId) {
+  if (sectionId === "friendsSection")
+    updateFriends();
+
   // Hide all sections
   const sections = document.querySelectorAll('section');
   sections.forEach(section => section.classList.add('hidden'));
@@ -542,7 +545,7 @@ document.getElementById('addStockForm').addEventListener('submit', async (e) => 
 // --- Friends ---
 async function requestFriend() {
   const email = document.getElementById("friendEmail").value;
-  await apiFetch('/api/friends/request', {
+  await apiFetch('/api/friends/requests', {
     method: 'POST',
     body: JSON.stringify({ email })
   });
@@ -562,6 +565,28 @@ async function removeFriend(e) {
     method: 'DELETE',
     body: JSON.stringify({ email })
   });
+}
+
+async function updateFriends() {
+  const requests = await (await apiFetch("/api/friends/requests")).json();
+  const domRequests = document.getElementById("incomingRequests");
+  domRequests.innerHTML = "";
+  for (const row of requests) {
+    const item = document.createElement("li");
+    item.innerHTML = `${row.sender} <button onclick="processRequest(this, 'accept')">Accept</button> <button onclick="processRequest(this, 'reject')">Reject</button>`;
+    item.dataset.user = row.sender;
+    domRequests.appendChild(item);
+  }
+
+  const friends = await (await apiFetch("/api/friends")).json();
+  const domFriends = document.getElementById("friendList");
+  domFriends.innerHTML = "";
+  for (const row of friends) {
+    const item = document.createElement("li");
+    item.innerHTML = `${row.friend} <button onclick="removeFriend(this)">Remove</button>`;
+    item.dataset.user = row.friend;
+    domFriends.appendChild(item);
+  }
 }
 
 // --- Initialization ---
