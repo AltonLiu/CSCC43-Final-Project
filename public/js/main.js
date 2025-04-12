@@ -549,6 +549,7 @@ async function requestFriend() {
     method: 'POST',
     body: JSON.stringify({ email })
   });
+  updateFriends();
 }
 
 async function processRequest(e, action) {
@@ -557,6 +558,7 @@ async function processRequest(e, action) {
     method: 'POST',
     body: JSON.stringify({ email, action })
   });
+  updateFriends();
 }
 
 async function removeFriend(e) {
@@ -565,6 +567,7 @@ async function removeFriend(e) {
     method: 'DELETE',
     body: JSON.stringify({ email })
   });
+  updateFriends();
 }
 
 async function updateFriends() {
