@@ -26,7 +26,7 @@ router.post("/requests", async (req, res) => {
         return;
       }
       if (new Date() - date < 5 * 60000) {
-        res.status(400).json({ error: "You are sending requests too quickly" });
+        res.status(400).json({ error: "You are sending requests too quickly, there is a 5 minute cooldown for friend requests" });
         return;
       }
 

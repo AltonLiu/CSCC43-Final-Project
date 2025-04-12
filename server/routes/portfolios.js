@@ -6,7 +6,6 @@ require('dotenv').config();
 // Get all portfolios for a user
 router.get('/', async (req, res) => {
     const { email, name } = req.user;
-    console.log('Fetching portfolios for user:', email);
 
     try {
         // Fetch all portfolios for the user

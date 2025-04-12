@@ -545,10 +545,17 @@ document.getElementById('addStockForm').addEventListener('submit', async (e) => 
 // --- Friends ---
 async function requestFriend() {
   const email = document.getElementById("friendEmail").value;
-  await apiFetch('/api/friends/requests', {
+  const res = await apiFetch('/api/friends/requests', {
     method: 'POST',
     body: JSON.stringify({ email })
   });
+
+  if (res.ok) {
+    alert("Friend request sent!");
+  } else {
+    const errorData = await res.json();
+    alert("Error: " + (errorData.error || "Failed to send friend request"));
+  }
 }
 
 async function processRequest(e, action) {
